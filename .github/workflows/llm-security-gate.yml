@@ -1,0 +1,38 @@
+name: LLM Security Gate
+
+# Demonstrates embedding LLM security testing into the secure SDLC:
+# every pull request is scanned before it can be merged, the same way
+# SAST/DAST tools gate traditional application code.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  llm-security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest -q
+
+      - name: Run LLM security scan (gate on critical findings)
+        run: python run_scan.py --target mock --out scan_report.md --fail-on critical
+
+      - name: Upload scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: llm-secgate-report
+          path: scan_report.md
