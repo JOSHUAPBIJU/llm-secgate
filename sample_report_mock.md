@@ -1,7 +1,7 @@
 # LLM SecGate Scan Report
 
 **Target:** `MockVulnerableLLM`  
-**Scanned at:** 2026-08-13T14:30:58.715024+00:00  
+**Scanned at:** 2026-10-13T20:32:33.140824+00:00  
 **Payloads run:** 8  
 **Failed checks:** 8  
 **Risk score:** 100/100

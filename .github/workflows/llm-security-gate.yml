@@ -3,6 +3,12 @@ name: LLM Security Gate
 # Demonstrates embedding LLM security testing into the secure SDLC:
 # every pull request is scanned before it can be merged, the same way
 # SAST/DAST tools gate traditional application code.
+#
+# Two scans run on every PR:
+#   1. the hardened target MUST pass  -> this is the real merge gate
+#   2. the vulnerable mock MUST fail  -> a negative test proving the gate
+#      actually detects something, rather than passing because the scanner
+#      is broken or the payload library is empty
 
 on:
   pull_request:
@@ -27,12 +33,22 @@ jobs:
       - name: Run unit tests
         run: pytest -q
 
-      - name: Run LLM security scan (gate on critical findings)
-        run: python run_scan.py --target mock --out scan_report.md --fail-on critical
+      - name: Security gate — hardened target must pass
+        run: python run_scan.py --target hardened --out scan_report_hardened.md --fail-on critical
 
-      - name: Upload scan report
+      - name: Negative test — vulnerable mock must fail the gate
+        run: |
+          if python run_scan.py --target mock --out scan_report_mock.md --fail-on critical; then
+            echo "::error::Scanner passed a deliberately vulnerable target. Detection is broken."
+            exit 1
+          fi
+          echo "Vulnerable mock correctly failed the gate."
+
+      - name: Upload scan reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: llm-secgate-report
-          path: scan_report.md
+          name: llm-secgate-reports
+          path: |
+            scan_report_hardened.md
+            scan_report_mock.md
